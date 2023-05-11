@@ -8,6 +8,7 @@ const passport = require("passport");
 
 // Load User model
 const User = require("../../models/User");
+const Order = require("../../models/Order");
 
 // @route   POST api/users/signup
 // @desc    Register user
@@ -86,10 +87,47 @@ router.post("/login", (req, res) => {
   });
 });
 
+// // Get all orders for a user
+// router.get("/orders/:userId", (req, res) => {
+//   Order.find({ user_id: req.params.userId }, (err, orders) => {
+//     if (err) {
+//       res.send(err);
+//     } else {
+//       res.json(orders);
+//     }
+//   });
+// });
+
+// Create a new order
+router.post("/orders", (req, res) => {
+  const order = new Order(req.body);
+  order
+    .save()
+    .then(() => {
+      res.json({ message: "Order created successfully!" });
+    })
+    .catch((err) => {
+      res.send(err);
+    });
+});
+
 router.get("/:id", async (req, res) => {
   const user = await User.findById(req.params.id).select("-password");
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json(user);
+});
+
+router.get("/orders/:userId", (req, res) => {
+  const userId = req.params.userId;
+  console.log(userId);
+  Order.find({ user: userId })
+    .exec()
+    .then((orders) => {
+      res.json(orders);
+    })
+    .catch((err) => {
+      res.send(err);
+    });
 });
 
 // Protected route
