@@ -14,10 +14,10 @@ const Order = require("../../models/Order");
 // @desc    Register user
 // @access  Public
 router.post("/signup", (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phone, address, city } = req.body;
 
   // Simple validation
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !phone || !address || !city) {
     return res.status(400).json({ msg: "Please enter all fields" });
   }
 
@@ -28,6 +28,9 @@ router.post("/signup", (req, res) => {
     const newUser = new User({
       name,
       email,
+      phone,
+      address,
+      city,
       password,
     });
 
@@ -48,6 +51,19 @@ router.post("/signup", (req, res) => {
       });
     });
   });
+});
+
+router.put("/users/:userId", (req, res) => {
+  const userId = req.params.userId;
+
+  User.findByIdAndUpdate(userId, req.body, { new: true })
+    .exec()
+    .then((updatedUser) => {
+      res.json(updatedUser);
+    })
+    .catch((err) => {
+      res.send(err);
+    });
 });
 
 router.post("/login", (req, res) => {
