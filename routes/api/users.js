@@ -11,6 +11,7 @@ const User = require("../../models/User");
 const Order = require("../../models/Order");
 const ContactForm = require("../../models/ContactForm");
 const RegisterComplaint = require("../../models/RegisterComplaint");
+const Review = require("../../models/Review");
 
 // @route   POST api/users/signup
 // @desc    Register user
@@ -218,6 +219,25 @@ router.get("/:id", async (req, res) => {
   const user = await User.findById(req.params.id).select("-password");
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json(user);
+});
+// POST route to save a new review form submission
+router.post("/review", async (req, res) => {
+  try {
+    const { username, email, comment } = req.body;
+
+    const newReview = new Review({
+      username: username,
+      email: email,
+      comment: comment,
+    });
+
+    await newReview.save();
+
+    return res.status(200).json({ message: "Review submitted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.get("/orders/:userId", (req, res) => {
