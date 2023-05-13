@@ -9,6 +9,8 @@ const passport = require("passport");
 // Load User model
 const User = require("../../models/User");
 const Order = require("../../models/Order");
+const ContactForm = require("../../models/ContactForm");
+const RegisterComplaint = require("../../models/RegisterComplaint");
 
 // @route   POST api/users/signup
 // @desc    Register user
@@ -66,6 +68,52 @@ router.put("/users/:userId", (req, res) => {
     });
 });
 
+// POST /api/users/change-password
+router.post("/change-password/:userId", async (req, res) => {
+  const userId = req.params.userId;
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    console.log(user, user._id);
+    // Compare the old password with the stored password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+
+    console.log(isMatch);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: "Old password is incorrect" });
+    }
+
+    // Hash the new password
+    const hash = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password in the database
+    console.log(hash);
+    user.password = hash;
+    console.log(user.password, "saved");
+
+    user.save().then((user) => {
+      res.json({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      });
+    });
+
+    return res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -101,6 +149,45 @@ router.post("/login", (req, res) => {
       }
     });
   });
+});
+
+// POST route to save a new contact form submission
+router.post("/contact", async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+
+    const newFormSubmission = new ContactForm({
+      name: name,
+      email: email,
+      message: message,
+    });
+
+    await newFormSubmission.save();
+
+    return res.status(200).json({ message: "Form submitted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+// POST route to save a new contact form submission
+router.post("/register-complaint", async (req, res) => {
+  try {
+    const { name, email, complaint } = req.body;
+
+    const newFormSubmission = new RegisterComplaint({
+      name: name,
+      email: email,
+      complaint: complaint,
+    });
+
+    await newFormSubmission.save();
+
+    return res.status(200).json({ message: "Form submitted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // // Get all orders for a user
