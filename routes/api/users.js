@@ -69,49 +69,38 @@ router.put("/users/:userId", (req, res) => {
     });
 });
 
-// POST /api/users/change-password
-router.post("/change-password/:userId", async (req, res) => {
-  const userId = req.params.userId;
-  const { oldPassword, newPassword } = req.body;
+// PUT /api/users/:id/password
+router.put("/users/:id/password", async (req, res) => {
+  const { id } = req.params;
+  const { currentPassword, newPassword } = req.body;
 
   try {
-    const user = await User.findById(userId);
-
+    // Find the user in the database
+    const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    console.log(user, user._id);
-    // Compare the old password with the stored password
-    const isMatch = await bcrypt.compare(oldPassword, user.password);
-
-    console.log(isMatch);
-
-    if (!isMatch) {
-      return res.status(401).json({ error: "Old password is incorrect" });
+    // Check if the current password matches
+    const passwordMatches = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!passwordMatches) {
+      return res.status(401).json({ error: "Invalid password" });
     }
 
     // Hash the new password
-    const hash = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the user's password in the database
-    console.log(hash);
-    user.password = hash;
-    console.log(user.password, "saved");
+    // Update the user's password
+    user.password = hashedPassword;
+    await user.save();
 
-    user.save().then((user) => {
-      res.json({
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        },
-      });
-    });
-
-    return res.status(200).json({ message: "Password updated successfully" });
+    res.json({ message: "Password updated successfully" });
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
